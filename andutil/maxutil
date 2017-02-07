@@ -1,0 +1,66 @@
+#!/bin/bash
+set -e
+
+realpath() {
+    [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
+}
+
+locale(){
+  SERIAL=$1
+  LANGUAGE=$2
+  COUNTRY=$3
+  adb -s $SERIAL shell "setprop persist.sys.language $LANGUAGE; setprop persist.sys.country $COUNTRY; setprop persist.sys.locale $COUNTRY; setprop ctl.restart zygote"
+}
+export -f locale
+
+launch(){
+  SERIAL=$1
+  adb -s $SERIAL shell am start -S -n org.mozilla.fennec_$USER/.App
+}
+export -f launch
+
+install() {
+  SERIAL=$1
+  shift;
+  adb -s $SERIAL $@
+  launch $SERIAL
+}
+export -f install
+
+shell() {
+  SERIAL=$1
+  shift;
+  adb -s $SERIAL $@
+}
+export -f shell
+
+DEVICES=$(adb devices | grep -v List | cut -f 1);
+
+
+case "$1" in 
+  install)
+    export ARGS=$@
+    printf "%s\n" "${DEVICES[@]}" | xargs -n 1 -P 20 -I\; bash -c 'install ";" "$ARGS"'
+    ;;
+  ltr)
+    printf "%s\n" "${DEVICES[@]}" | xargs -n 1 -P 20 -I\; bash -c 'locale ";" zh TW'
+    ;;
+  rtl)
+    printf "%s\n" "${DEVICES[@]}" | xargs -n 1 -P 20 -I\; bash -c 'locale ";" iw HE'
+    ;;
+  launch)
+    printf "%s\n" "${DEVICES[@]}" | xargs -n 1 -P 20 -I\; bash -c 'launch ";"'
+#    for DEVICE in $DEVICES; do
+#      launch $DEVICE
+#    done
+    ;;
+   shell)
+    export ARGS=$@
+    printf "%s\n" "${DEVICES[@]}" | xargs -n 1 -P 20 -I\; bash -c 'shell ";" "$ARGS"'
+    ;;
+ *)
+    exit 1
+  ;;
+esac
+
+
