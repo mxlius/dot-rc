@@ -9,12 +9,13 @@
 #startup_message off
 
 #defflow on # will force screen to process ^S/^Q
-
-deflogin on
+#deflogin on
 #autodetach off
 
 vbell off
 vbell_msg "   Wuff  ----  Wuff!!  "
+
+scrollback 10000
 
 # all termcap entries are now duplicated as terminfo entries.
 # only difference should be the slightly modified syntax, and check for
@@ -88,8 +89,8 @@ bind ^\
 #make them better
 bind \\ quit
 bind K kill
-bind I login on
-bind O login off
+#bind I login on
+#bind O login off
 bind } history
 
 
@@ -112,8 +113,20 @@ bindkey \033[C next
 bindkey \033[D prev
 
 #mac
+#bindkey ^[[1;5D prev
+#bindkey ^[[1;5C next
+
+bindkey \033[5D prev
+bindkey \033[5C next
+
+#Mac iterm2
 bindkey ^[[1;5D prev
 bindkey ^[[1;5C next
+
+
+bindkey ^[z prev
+bindkey ^[x next
+
 
 sorendition     Yb
 vbell           off
