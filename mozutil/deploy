@@ -1,0 +1,68 @@
+#!/bin/bash
+set -e
+
+MOZ_CONFIG=true
+
+realpath() {
+    [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
+}
+
+FILENAME_MACH="mach"
+
+CURRENT_DIR=$(pwd -P)
+
+until [ "/" = "${CURRENT_DIR}" ] || [  ! -z $FOUND ]; do
+  FILE_MACH=${CURRENT_DIR}/${FILENAME_MACH}
+  if [ -f $FILE_MACH ] && [ ! -h $FILE_MACH ]; then
+    FOUND="true";
+  else
+    CURRENT_DIR=$(dirname ${CURRENT_DIR});
+  fi
+done
+
+if [ -z $FOUND ]; then
+  echo "Not in a mozilla-central codebase!"
+  exit 1;
+fi
+
+MOZILLA_CENTRAL=${CURRENT_DIR}
+
+source ${MOZILLA_CENTRAL}/mozconfig
+
+$MOZILLA_CENTRAL/mach build
+$MOZILLA_CENTRAL/mach build mobile/android
+
+if [ ! $MOZ_TARGET ]; then
+  MOZ_TARGET="arm-linux-androideabi";
+fi
+
+OBJDIR="obj-${MOZ_TARGET}"
+
+if [ $LOCALE_BUILD = "true" ]; then
+
+  if [ $L10NBASEDIR ]; then
+    pushd $L10NBASEDIR
+    for loc in $LANGS; do 
+      if ! [ -d "$loc" ]; then 
+        hg clone "http://hg.mozilla.org/releases/l10n/mozilla-aurora/$loc"; 
+      fi;
+      pushd $loc; 
+      hg pull; 
+      popd; 
+    done
+    popd
+  
+    for loc in $LANGS; do
+      make -C ${MOZILLA_CENTRAL}/${OBJDIR}/mobile/android/locales merge-$loc LOCALE_MERGEDIR=${MOZILLA_CENTRAL}/${OBJDIR}/merge-$loc;
+      make -C ${MOZILLA_CENTRAL}/${OBJDIR}/mobile/android/locales chrome-$loc LOCALE_MERGEDIR=${MOZILLA_CENTRAL}/${OBJDIR}/merge-$loc;
+    done
+  fi
+
+fi
+
+$MOZILLA_CENTRAL/mach package
+$MOZILLA_CENTRAL/mach install -v
+$MOZILLA_CENTRAL/mach run
+#$MOZILLA_CENTRAL/gradlew assembleLocalDebug
+
+
