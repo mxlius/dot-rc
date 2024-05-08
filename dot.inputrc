@@ -1,6 +1,15 @@
 
-bind '"\e[A":history-search-backward'
-bind '"\e[B":history-search-forward'
-bind '"\e[6~":forward-word'
-bind '"\e[5~":backward-word'
+## include default key binding
+#$include /etc/inputrc
+
+## arrow up
+"\e[A":history-search-backward
+## arrow down
+"\e[B":history-search-forward
+
+## page up
+"\e[6~":forward-word
+## page down
+"\e[5~":backward-word
+
 
